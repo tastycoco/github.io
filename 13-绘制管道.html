@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        canvas {
+            border: 1px solid red;
+        }
+    </style>
+    <script src="FlappyBird.js"></script>
+    <script src="sky.js"></script>
+    <script src="bird.js"></script>
+    <script src="land.js"></script>
+    <script src="pipe.js"></script>
+    <script>
+        onload = function () {
+            var cas = document.querySelector("#cas");
+            var ctx = cas.getContext("2d");
+
+
+            var currentTime;
+            var lastTime = new Date();
+            var deltaTime = 0;
+
+            var isRunning = true;
+
+
+            var imgArr = ["birds", "land", "sky", "pipe1", "pipe2"];
+
+            FB.loadImg(imgArr, function (imgList) {
+
+                var roles = [];
+
+                //创建天空对象
+                for(var i = 0; i< 2; i++){
+                    roles.push(new FB.Sky({
+                        x: i * imgList.sky.width,
+                        y: 0,
+                        ctx: ctx,
+                        speed: 2,
+                        img: imgList.sky
+                    }));
+                }
+
+                //创建管道对象
+                for(var i = 0; i < 6; i++){
+                    roles.push( new FB.Pipe({
+                        ctx: ctx,
+                        x: 300 + imgList.pipe1.width * 3 * i,
+                        speed: 2,
+                        imgTop: imgList.pipe2,
+                        imgBottom: imgList.pipe1,
+                    }));
+                }
+
+
+                //创建陆地对象
+                for(var i = 0; i < 4; i++){
+                    roles.push(new FB.Land({
+                        ctx: ctx,
+                        x: i * imgList.land.width,
+                        y: cas.height - imgList.land.height,
+                        img: imgList.land,
+                        speed: 2
+                    }));
+                }
+
+                //创建小鸟对象
+                var hero = new FB.Bird({
+                    casH: cas.height,
+                    landH: imgList.land.height,
+                    ctx: ctx,
+                    x: 100,
+                    y: 100,
+                    img: imgList.birds,
+                });
+//                roles.push(hero);
+
+                function render() {
+                    //计算事件差
+                    currentTime = new Date();
+                    //使用当前帧的时间 减去 上一帧的时间就是时间差
+                    deltaTime = currentTime - lastTime;
+                    //让当前帧的事件变成下一帧的lastTime
+                    lastTime = currentTime;
+
+                    //清空画布
+                    ctx.clearRect(0, 0, cas.width, cas.height);
+
+                    ctx.beginPath();
+
+                    roles.forEach(function(v){
+                        v.draw(deltaTime);
+                    });
+                    //游戏终止的判断
+                    if(hero.y  <= 0){
+                        isRunning = false;
+                        hero.y = 0;
+                    }
+
+                    if( hero.y  >= cas.height - imgList.land.height - hero.height){
+                        hero.y =  cas.height - imgList.land.height - hero.height;
+                        isRunning = false;
+                    }
+                    hero.draw(deltaTime);
+
+                    if(ctx.isPointInPath(hero.x + hero.width /2, hero.y + hero.height /2)){
+                        isRunning = false;
+                    }
+
+                    if(isRunning){
+                        requestAnimationFrame(render);
+                    }
+                }
+                render();
+
+                cas.onclick = function () {
+                    hero.speed = -0.3;
+                }
+            })
+        }
+    </script>
+</head>
+<body>
+<canvas width=800 height=600 id="cas"></canvas>
+</body>
+</html>
